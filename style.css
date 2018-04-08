@@ -29,12 +29,12 @@
     text-align: right;
     padding: 0 1em;
     line-height: 1.5em;
-    border-top: 2px solid white;
+    border-top: 2px solid white !important;
 }
 .pgnb_group {
     text-align: left;
-    border-left:2px solid white;
-    border-top:2px solid white;
+    border-left:2px solid white !important;
+    border-top:2px solid white !important;
     width: 100%;
     padding: 0px;
 }

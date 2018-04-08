@@ -13,7 +13,7 @@
  * @author Jovin Sveinbjornsson
  * @author Midgard Apps <hello@midgardapps.com>
  *
- * @version 0.2
+ * @version 1.0
  */
 
 // Must be run within DokuWiki
@@ -38,7 +38,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
      * When should this be executed?
      */
     public function getSort() {
-        return 1;
+        return 275;
     }
     
     public function getAllowedTypes() {
@@ -159,7 +159,8 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
             $ghtml = '<tr><th class="pgnb_group_title">'.$group.'</th><td class="pgnb_group"><div style="padding:0em 0.25em;"><ul class="pgnb_list">';
             // Iterate over each item and append the HTML to our placeholder
             foreach ($items as $item) {
-                $ghtml .= '<li>'.$item.'</li>';
+                $url = $renderer->render($item, $format='xhtml');
+                $ghtml .= '<li>'.substr($url, 5, strlen($url)-11).'</li>';
             }
             // Close the group
             $ghtml .= '</ul></div></td></tr>';
