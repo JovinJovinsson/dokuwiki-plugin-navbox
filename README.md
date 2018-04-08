@@ -4,7 +4,8 @@ This plugin enables the ability to have a 'navbox' of related articles similar t
 The DokuWiki Home Page will be https://www.dokuwiki.org/plugin:navbox however there is currently no data on there.
 
 To use this plugin, follow standard installation instructions and use the below syntax:
-```<navbox>
+```
+<navbox>
 nb-title TITLE
 nbg-title GROUP TITLE
 nbg-items [[links]]
