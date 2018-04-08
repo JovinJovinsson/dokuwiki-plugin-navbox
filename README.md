@@ -15,3 +15,5 @@ nbg-items [[links]]
 **nb-title** & **nbg-title** accept text and wiki markup links
 
 **nbg-items** accepts a series of wiki markup links, no delimiters required
+
+You can continue to repeat **nbg-title** and **nbg-items** as many times as you wish!
