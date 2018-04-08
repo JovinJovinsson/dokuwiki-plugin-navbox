@@ -13,7 +13,7 @@
  * @author Jovin Sveinbjornsson
  * @author Midgard Apps <hello@midgardapps.com>
  *
- * @version 0.1
+ * @version 0.2
  */
 
 // Must be run within DokuWiki
@@ -38,7 +38,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
      * When should this be executed?
      */
     public function getSort() {
-        return 59;
+        return 1;
     }
     
     public function getAllowedTypes() {
@@ -73,52 +73,51 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         $navbox = array();
         // Temporary area to store groups
         $navgroup = array();
+        $current = '';
         
         // Loop over while we continue to have more to process
         while(count($lines) > 0) {
             // Clean up and work only with the current line, remove it from the remaining array
             $line = trim(array_shift($lines));
             // If it's not valid, skip
-            if(!$line) continue;
-            // Use our function to cleanly split the data
-            $args = $this->grab_data($line);
+            if (strlen($line) < 1) continue;
             
-            // Place our args into the $navbox array in the correct method
-            // 2D Array with structure:
-            // $navbox[0] = "The title";
-            // $navbox[1..n] = ["nbg-title", "Group title", "items" => ["[[Link1]]", "[[Link n]]"]];
-            // If we can't find any of our 'sort tags' then just skip this
-            if (in_array($args[0], array('nb-title', 'nbg-title', 'nbg-items'))) {
-                // In this case, we only have our 'sort tag', this is invalid, skip it
-                if (count($args) < 2) {
-                    msg(sprintf($this->getLang('e_missingargs'), hsc($args[0]), hsc($args[1])), -1);
-                    continue;
-                }
+            // Check if this is the title
+            if (strpos($line, 'nb-title') !== false) {
+                // Store it
+                $navbox['nb-title'] = substr($line, 9);
+            } else if (strpos($line, 'nbg-title') !== false) { // Check for the group title
+                // Store it
+                $current = substr($line, 10);
+            } else if (strpos($line, 'nbg-items') !== false && strlen($current) > 0) { // Check that we have a valid group, and get the items
+                // Begin at the first link
+                $items = substr($line, 10);
                 
-                // nb-title is the NavBox title
-                if ($args[0] == 'nb-title') {
-                    // Make this the first element in the NavBox
-                    array_unshift($navbox, $args[1]);
-                    continue;
+                // Minimum length for a link is 5 characters, [[z]]
+                while (strlen($items) > 5) {
+                    // Find the opening of the link
+                    $start = strpos($items, '[[');
+                    // Find the close of the link, increment by 2 to offset the ]]
+                    $end = strpos($items, ']]');
+                    
+                    // Check that we have a valid link
+                    if ($start !== false && $end !== false) {
+                        // Offset the end to account for the ]]
+                        $end += 2;
+                        // Store this in a temporary array
+                        array_push($navgroup, substr($items, $start, $end));
+                        // Remove this link from the items
+                        $items = substr($items, $end);
+                    } else {
+                        // Not valid, just break
+                        break;
+                    }
                 }
-                
-                // nbg-title is the Group (left column) title
-                if ($args[1] == 'nbg-title') {
-                    // Store it in our temporary variable
-                    $navgroup = $args;
-                }
-                
-                // nbg-items is a list of the links to contain
-                if ($args[1] = "nbg-items") {
-                    // Remove the 'nbg-items' value
-                    array_shift($args);
-                    // Append them to the key "items"
-                    $navgroup["items"] = $args;
-                    // Store this group at the end of our $navbox
-                    $navbox[] = $navgroup;
-                    // Clear the array
-                    $navgroup = array();
-                }
+                // Store our links against their title name
+                $navbox[$current] = $navgroup;
+                // Reset our placeholders
+                $current = '';
+                $navgroup = array();
             }
         }
         
@@ -139,26 +138,31 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         // Prevent caching
         $renderer->info['cache'] = false;
         
+        //$renderer->doc .= var_dump($data);
+        
         // Build the beginnings of the table
         $html = '<div class="pgnb_container"><table class="pgnb_table"><tr><th class="pgnb_title" colspan="2"><span class="pgnb_title_text">';
         // Add in the title
-        $html .= $data[0];
+        $html .= $data['nb-title'];
         // Prepare for the groups
         $html .= '</span></th></tr>';
+        
         // Get rid of the title to iterate over the groups
         array_shift($data);
         
-        foreach ($data as $group) {
-            // Something is wrong, skip this one
-            if ($group[0] != 'nbg-title') continue;
+        // Placeholder for our Group
+        $ghtml = '';
+        
+        // Go through each item group and build their row
+        foreach ($data as $group => $items) {
             // Placeholder for group HTML while we build it,  Add in the group title, and prepare for the items
-            $ghtml = '<tr><th class="pgnb_group_title">'.$group[1].'</th><td class="pgnb_group"><div style="padding:0em 0.25em;"><ul class="pgnb_list">';
+            $ghtml = '<tr><th class="pgnb_group_title">'.$group.'</th><td class="pgnb_group"><div style="padding:0em 0.25em;"><ul class="pgnb_list">';
             // Iterate over each item and append the HTML to our placeholder
-            foreach ($group["items"] as $item) {
-                $ghtml = '<li>'.$item.'</li>';
+            foreach ($items as $item) {
+                $ghtml .= '<li>'.$item.'</li>';
             }
             // Close the group
-            $ghtml = '</ul></div></td></tr>';
+            $ghtml .= '</ul></div></td></tr>';
             // Append the group to our HTML
             $html .= $ghtml;
             // Reset our placeholder
@@ -171,98 +175,6 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         $renderer->doc .= $html;
         
         return true;
-    }
-    
-    /**
-     * Function to identify the data points for the table
-     * Adapted from the function _parse_line in the Bureaucracy plugin
-     * @source https://github.com/splitbrain/dokuwiki-plugin-bureaucracy/blob/master/syntax.php#L399
-     *
-     * @param string $line The current working line
-     * 
-     * @return array The identified details to be utilised
-     */
-    private function grab_data($line) {
-        // Our data to return
-        $args = array();
-        // Identify if we're inside quotation marks
-        $inQuote = false;
-        // Identify if we're inside a DokuWiki Link [[]]
-        $inLink = false;
-        // The current tag we're working with
-        $arg = '';
-        
-        // Identify the number of characters to parse
-        $len = strlen($line);
-        // Iterate over every character
-        for ($i = 0; $i < $len; $i++) {
-            // Is this a "
-            if ($line[$i] == '"') {
-                if ($inQuote) { // If this is the 2nd " we've seen
-                    // End the current item we're parsing
-                    array_push($args, $arg);
-                    // Switch off the inQuote
-                    $inQuote = false;
-                    // Empty the placeholder
-                    $arg = '';
-                    // Don't append anything
-                    continue;
-                } else { // This is the first " we've seen
-                    // Turn on the inQuote
-                    $inQuote = true;
-                    // Don't append anything
-                    continue;
-                }
-            } else if ($line[$i] == '[' && $line[$i+1] == '[') { // This signals a DokuWiki link
-                if (!$inLink) { // We're not currently in a link
-                    // Append this to our current tag
-                    $arg .= $line[$i];
-                    // Get the next as well
-                    $i++;
-                    // Append it too
-                    $arg .= $line[$i];
-                    // Turn on the inLink
-                    $inLink = true;
-                    continue;
-                } else { //Something has gone wrong
-                    // Let's tell the user we had a bad link
-                    $arg = 'Bad Link';
-                    // Kill this line off
-                    array_push($args, $arg);
-                    $arg = '';
-                    continue;
-                }
-            } else if ($line[$i] == ']' && $line[$i+1] == ']') { // This signals the closure of a DokuWiki link
-                if ($inLink) { // We're currently building a link
-                    $arg .= $line[$i];
-                    $i++;
-                    $arg .= $line[$i];
-                    $inLink = false;
-                    
-                    if ($inQuote) { // This link was in a string arg
-                        continue;
-                    } else { // This is a standalone link
-                        array_push($args, $arg);
-                        $arg = '';
-                        continue;
-                    }
-                }
-            } else if ($line[$i] == ' ') {
-                if ($inQuote || $inLink) { // We're allowed spaces in quotes and links
-                    $arg .= ' ';
-                    continue;
-                } else {
-                    if (strlen($arg) < 1) continue; // Don't append if it was a random or double space
-                    array_push($args, $arg);
-                    $arg = '';
-                    continue;
-                }
-            }
-            $arg .= $line[$i];
-        }
-        // Catch any tailing things (this could break the user's input)
-        if (strlen($arg) > 0) array_push($args, $arg);
-        return $args;
     }
 }
 
