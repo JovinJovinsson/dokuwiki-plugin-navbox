@@ -7,6 +7,7 @@
     background:transparent;
     border-collapse:separate;
     width: 100%;
+    margin: 0px;
 }
 .pgnb_table tr {
     padding: 0;
