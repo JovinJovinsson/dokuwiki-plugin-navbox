@@ -95,7 +95,6 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
                 
                 // Minimum length for a link is 5 characters, [[z]]
                 while (strlen($items) > 5) {
-                    echo $items.'<br/>';
                     // Find the opening of the link
                     $start = strpos($items, '[[');
                     // Find the close of the link, increment by 2 to offset the ]]
