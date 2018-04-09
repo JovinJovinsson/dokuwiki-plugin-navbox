@@ -13,7 +13,7 @@
  * @author Jovin Sveinbjornsson
  * @author Midgard Apps <hello@midgardapps.com>
  *
- * @version 1.0
+ * @version 1.1
  */
 
 // Must be run within DokuWiki
@@ -95,6 +95,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
                 
                 // Minimum length for a link is 5 characters, [[z]]
                 while (strlen($items) > 5) {
+                    echo $items.'<br/>';
                     // Find the opening of the link
                     $start = strpos($items, '[[');
                     // Find the close of the link, increment by 2 to offset the ]]
@@ -137,13 +138,15 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         if ($mode != 'xhtml') return false;
         // Prevent caching
         $renderer->info['cache'] = false;
-        
-        //$renderer->doc .= var_dump($data);
-        
+
         // Build the beginnings of the table
         $html = '<div class="pgnb_container"><table class="pgnb_table"><tr><th class="pgnb_title" colspan="2"><span class="pgnb_title_text">';
-        // Add in the title
-        $html .= $data['nb-title'];
+        
+        // Placeholder for our xhtml formatted URL
+        $url = '';
+
+        // Add in the title, parse it first to generate any URLs present
+        $html .= $this->urlRender($data['nb-title']);
         // Prepare for the groups
         $html .= '</span></th></tr>';
         
@@ -156,11 +159,13 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         // Go through each item group and build their row
         foreach ($data as $group => $items) {
             // Placeholder for group HTML while we build it,  Add in the group title, and prepare for the items
-            $ghtml = '<tr><th class="pgnb_group_title">'.$group.'</th><td class="pgnb_group"><div style="padding:0em 0.25em;"><ul class="pgnb_list">';
+            $ghtml = '<tr><th class="pgnb_group_title">'.$this->urlRender($group).'</th><td class="pgnb_group"><div style="padding:0em 0.25em;"><ul class="pgnb_list">';
             // Iterate over each item and append the HTML to our placeholder
             foreach ($items as $item) {
-                $url = $renderer->render($item, $format='xhtml');
-                $ghtml .= '<li>'.substr($url, 5, strlen($url)-11).'</li>';
+                // Format the item as a URL (any kind)
+                $url = $this->urlRender($item);
+                // Append it
+                $ghtml .= '<li>'.$url.'</li>';
             }
             // Close the group
             $ghtml .= '</ul></div></td></tr>';
@@ -176,6 +181,42 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         $renderer->doc .= $html;
         
         return true;
+    }
+    
+    /**
+     * Handles rendering of DokuWiki links to URLs for all kinds of URL
+     *
+     * @param string $item The DokuWiki markup to be converted
+     *
+     * @return string The XHTML rendering of the markup
+     */
+    private function urlRender($item) {
+        // Create the parser
+        $urlParser = & new Doku_Parser();
+        // Add a handler
+        $urlParser->Handler = & new Doku_Handler();
+        // Add all the parsing modes for various URLs
+        $urlParser->addMode('camelcaselink',new Doku_Parser_Mode_CamelCaseLink());
+        $urlParser->addMode('internallink',new Doku_Parser_Mode_InternalLink());
+        $urlParser->addMode('media',new Doku_Parser_Mode_Media());
+        $urlParser->addMode('externallink',new Doku_Parser_Mode_ExternalLink());
+        $urlParser->addMode('emaillink',new Doku_Parser_Mode_EmailLink());
+        $urlParser->addMode('windowssharelink',new Doku_Parser_Mode_WindowsShareLink());
+        $urlParser->addMode('filelink',new Doku_Parser_Mode_FileLink());
+        $urlParser->addMode('eol',new Doku_Parser_Mode_Eol());
+        // Parse the string into instructions
+        $instructions = $urlParser->parse($item);
+        // Create the renderer
+        $urlRenderer = & new Doku_Renderer_XHTML();
+        // Iterate over each instruction
+        foreach ($instructions as $instruction) {
+            // Execute the callback against the renderer
+            call_user_func_array(array(&$urlRenderer, $instruction[0]), $instruction[1]);
+        }
+        // Extract the XHTML data
+        $url = $urlRenderer->doc;
+        // Return the XHTML excluding the <p> and </p> tags
+        return substr($url, 5, strlen($url)-11);
     }
 }
 
