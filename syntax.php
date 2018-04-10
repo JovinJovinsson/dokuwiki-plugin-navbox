@@ -191,9 +191,9 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
      */
     private function urlRender($item) {
         // Create the parser
-        $urlParser = & new Doku_Parser();
+        $urlParser = new Doku_Parser();
         // Add a handler
-        $urlParser->Handler = & new Doku_Handler();
+        $urlParser->Handler = new Doku_Handler();
         // Add all the parsing modes for various URLs
         $urlParser->addMode('camelcaselink',new Doku_Parser_Mode_CamelCaseLink());
         $urlParser->addMode('internallink',new Doku_Parser_Mode_InternalLink());
@@ -206,7 +206,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         // Parse the string into instructions
         $instructions = $urlParser->parse($item);
         // Create the renderer
-        $urlRenderer = & new Doku_Renderer_XHTML();
+        $urlRenderer = new Doku_Renderer_XHTML();
         // Iterate over each instruction
         foreach ($instructions as $instruction) {
             // Execute the callback against the renderer
