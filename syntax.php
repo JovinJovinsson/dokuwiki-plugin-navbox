@@ -94,6 +94,28 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
                 $navbox[$current] = substr($line, 10);
                 // Reset our holder
                 $current = '';
+            } else if (strpos($line, 'nbg-namespace') !== false) { // This is an automated namespace listing
+                // Placeholders
+                $links = '';
+                $name = '';
+                // The current namespace is requested, using auto-naming as one wasn't specified
+                if (strpos($line, '[[self]]') !== false) {
+                    // Split out the 'sub namespaces'
+                    $name = explode(':', pageinfo()['namespace']);
+                    // Grab the lowest level namespace
+                    $name = array_pop($name);
+                    // Identify the working directory for this namespace
+                    $dir = './data/pages/'.str_replace(':', '/', pageinfo()['namespace']);
+                    // Look in the directory and get all .txt files (doku pages)
+                    foreach (glob($dir.'/*.txt') as $filename) {
+                        // Store each file as a new markup link
+                        $links .= '[['.str_replace('/', ':', substr($filename, 13, -4)).']]';
+                    }
+                } else if (strpos($line, '[[self|') !== false) { // Current namespace, override the name
+                    // TBC
+                }
+            
+                $navbox[$name] = $links;
             }
         }
         
@@ -113,11 +135,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         if ($mode != 'xhtml') return false;
         // Prevent caching
         $renderer->info['cache'] = false;
-
-        //$renderer->doc .= pageinfo()['id'];
-        //$file = str_replace(':', '/', pageinfo()['id']);
-        //$markdown = file_get_contents('./data/pages/'. $file . '.txt');
-        
+    
         // Build the beginnings of the table
         $html = '<div class="pgnb_container"><table class="pgnb_table"><tr><th class="pgnb_title" colspan="2"><span class="pgnb_title_text">';
         
