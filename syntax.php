@@ -13,13 +13,14 @@
  * @author Jovin Sveinbjornsson
  * @author Midgard Apps <hello@midgardapps.com>
  *
- * @version 1.1
+ * @version 1.2
  */
 
 // Must be run within DokuWiki
 if (!defined('DOKU_INC')) die();
 
 class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
+    
     /**
      * What kind of syntax?
      */
@@ -72,7 +73,6 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         // We'll store all our variables in here for processing later
         $navbox = array();
         // Temporary area to store groups
-        $navgroup = array();
         $current = '';
         
         // Loop over while we continue to have more to process
@@ -90,34 +90,10 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
                 // Store it
                 $current = substr($line, 10);
             } else if (strpos($line, 'nbg-items') !== false && strlen($current) > 0) { // Check that we have a valid group, and get the items
-                // Begin at the first link
-                $items = substr($line, 10);
-                
-                // Minimum length for a link is 5 characters, [[z]]
-                while (strlen($items) > 5) {
-                    // Find the opening of the link
-                    $start = strpos($items, '[[');
-                    // Find the close of the link, increment by 2 to offset the ]]
-                    $end = strpos($items, ']]');
-                    
-                    // Check that we have a valid link
-                    if ($start !== false && $end !== false) {
-                        // Offset the end to account for the ]]
-                        $end += 2;
-                        // Store this in a temporary array
-                        array_push($navgroup, substr($items, $start, $end));
-                        // Remove this link from the items
-                        $items = substr($items, $end);
-                    } else {
-                        // Not valid, just break
-                        break;
-                    }
-                }
-                // Store our links against their title name
-                $navbox[$current] = $navgroup;
-                // Reset our placeholders
+                // Store our list of links to be parsed
+                $navbox[$current] = substr($line, 10);
+                // Reset our holder
                 $current = '';
-                $navgroup = array();
             }
         }
         
@@ -138,6 +114,10 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         // Prevent caching
         $renderer->info['cache'] = false;
 
+        //$renderer->doc .= pageinfo()['id'];
+        //$file = str_replace(':', '/', pageinfo()['id']);
+        //$markdown = file_get_contents('./data/pages/'. $file . '.txt');
+        
         // Build the beginnings of the table
         $html = '<div class="pgnb_container"><table class="pgnb_table"><tr><th class="pgnb_title" colspan="2"><span class="pgnb_title_text">';
         
@@ -159,13 +139,15 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         foreach ($data as $group => $items) {
             // Placeholder for group HTML while we build it,  Add in the group title, and prepare for the items
             $ghtml = '<tr><th class="pgnb_group_title">'.$this->urlRender($group).'</th><td class="pgnb_group"><div style="padding:0em 0.25em;"><ul class="pgnb_list">';
-            // Iterate over each item and append the HTML to our placeholder
-            foreach ($items as $item) {
-                // Format the item as a URL (any kind)
-                $url = $this->urlRender($item);
-                // Append it
-                $ghtml .= '<li>'.$url.'</li>';
-            }
+
+            // Render all the links
+            $urls = $this->urlRender($items);
+            // Format into the list
+            $urls = str_replace("<a", "<li><a", $urls);
+            $urls = str_replace("</a>", "</a></li>", $urls);
+            // Append the list of URLs
+            $ghtml .= $urls;
+        
             // Close the group
             $ghtml .= '</ul></div></td></tr>';
             // Append the group to our HTML
@@ -191,9 +173,9 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
      */
     private function urlRender($item) {
         // Create the parser
-        $urlParser = new Doku_Parser();
+        $urlParser = & new Doku_Parser();
         // Add a handler
-        $urlParser->Handler = new Doku_Handler();
+        $urlParser->Handler = & new Doku_Handler();
         // Add all the parsing modes for various URLs
         $urlParser->addMode('camelcaselink',new Doku_Parser_Mode_CamelCaseLink());
         $urlParser->addMode('internallink',new Doku_Parser_Mode_InternalLink());
@@ -206,7 +188,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         // Parse the string into instructions
         $instructions = $urlParser->parse($item);
         // Create the renderer
-        $urlRenderer = new Doku_Renderer_XHTML();
+        $urlRenderer = & new Doku_Renderer_XHTML();
         // Iterate over each instruction
         foreach ($instructions as $instruction) {
             // Execute the callback against the renderer
