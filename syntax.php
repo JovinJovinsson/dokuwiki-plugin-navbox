@@ -13,7 +13,7 @@
  * @author Jovin Sveinbjornsson
  * @author Midgard Apps <hello@midgardapps.com>
  *
- * @version 1.2
+ * @version 1.3
  */
 
 // Must be run within DokuWiki
@@ -39,7 +39,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
      * When should this be executed?
      */
     public function getSort() {
-        return 275;
+        return 35;
     }
     
     public function getAllowedTypes() {
@@ -98,8 +98,8 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
                 // Placeholders
                 $links = '';
                 $name = '';
-                // The current namespace is requested, using auto-naming as one wasn't specified
-                if (strpos($line, '[[self]]') !== false) {
+                // The current namespace has been requested
+                if (strpos($line, '[[self') !== false) {
                     // Split out the 'sub namespaces'
                     $name = explode(':', pageinfo()['namespace']);
                     // Grab the lowest level namespace
@@ -111,10 +111,18 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
                         // Store each file as a new markup link
                         $links .= '[['.str_replace('/', ':', substr($filename, 13, -4)).']]';
                     }
-                } else if (strpos($line, '[[self|') !== false) { // Current namespace, override the name
-                    // TBC
+                    
+                    // Identify whether the title is overridden by searching for the additional | parameter
+                    $start = strpos($line, '[[self|');
+                    // If this value is valid (ie, a number), determine the overridden value
+                    if ($start !== false) {
+                        // We have a specific title to show, extract only this
+                        $start += 7;
+                        $name = substr($line, $start, strpos($line, ']]') - $start);
+                    }
                 }
-            
+                
+                // Store the title & links contained
                 $navbox[$name] = $links;
             }
         }
