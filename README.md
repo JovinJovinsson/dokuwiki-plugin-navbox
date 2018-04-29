@@ -9,6 +9,7 @@ To use this plugin, follow standard installation instructions and use the below 
 nb-title TITLE
 nbg-title GROUP TITLE
 nbg-items [[links]]
+nbg-namespace [[self]]
 </navbox>
 ```
 
@@ -16,4 +17,6 @@ nbg-items [[links]]
 
 **nbg-items** accepts a series of wiki markup links, no delimiters required
 
-You can continue to repeat **nbg-title** and **nbg-items** as many times as you wish!
+**nbg-namespace** can list all pages in the current namespace, title can be overridden with the parameter of |Override Title]] to close the tag, yet to come, listing all pages in a specified namespace.
+
+You can continue to repeat any **nbg-** item as many times as you like
