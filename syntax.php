@@ -13,7 +13,7 @@
  * @author Jovin Sveinbjornsson
  * @author Midgard Apps <hello@midgardapps.com>
  *
- * @version 1.2
+ * @version 1.3
  */
 
 // Must be run within DokuWiki
@@ -39,7 +39,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
      * When should this be executed?
      */
     public function getSort() {
-        return 275;
+        return 35;
     }
     
     public function getAllowedTypes() {
@@ -94,6 +94,36 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
                 $navbox[$current] = substr($line, 10);
                 // Reset our holder
                 $current = '';
+            } else if (strpos($line, 'nbg-namespace') !== false) { // This is an automated namespace listing
+                // Placeholders
+                $links = '';
+                $name = '';
+                // The current namespace has been requested
+                if (strpos($line, '[[self') !== false) {
+                    // Split out the 'sub namespaces'
+                    $name = explode(':', pageinfo()['namespace']);
+                    // Grab the lowest level namespace
+                    $name = array_pop($name);
+                    // Identify the working directory for this namespace
+                    $dir = './data/pages/'.str_replace(':', '/', pageinfo()['namespace']);
+                    // Look in the directory and get all .txt files (doku pages)
+                    foreach (glob($dir.'/*.txt') as $filename) {
+                        // Store each file as a new markup link
+                        $links .= '[['.str_replace('/', ':', substr($filename, 13, -4)).']]';
+                    }
+                    
+                    // Identify whether the title is overridden by searching for the additional | parameter
+                    $start = strpos($line, '[[self|');
+                    // If this value is valid (ie, a number), determine the overridden value
+                    if ($start !== false) {
+                        // We have a specific title to show, extract only this
+                        $start += 7;
+                        $name = substr($line, $start, strpos($line, ']]') - $start);
+                    }
+                }
+                
+                // Store the title & links contained
+                $navbox[$name] = $links;
             }
         }
         
@@ -113,11 +143,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         if ($mode != 'xhtml') return false;
         // Prevent caching
         $renderer->info['cache'] = false;
-
-        //$renderer->doc .= pageinfo()['id'];
-        //$file = str_replace(':', '/', pageinfo()['id']);
-        //$markdown = file_get_contents('./data/pages/'. $file . '.txt');
-        
+    
         // Build the beginnings of the table
         $html = '<div class="pgnb_container"><table class="pgnb_table"><tr><th class="pgnb_title" colspan="2"><span class="pgnb_title_text">';
         
