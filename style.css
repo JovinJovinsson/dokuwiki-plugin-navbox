@@ -9,6 +9,13 @@
     width: 100%;
     margin: 0px;
 }
+.pgnb_child_table {
+    border-spacing:0;
+    background:transparent;
+    border-collapse:separate;
+    width: 100%;
+    margin: 0px;
+}
 .pgnb_table tr {
     padding: 0;
 }
@@ -31,12 +38,21 @@
     line-height: 1.5em;
     border-top: 2px solid white !important;
 }
+.pgnb_subgroup_title {
+    width:1%;
+    background: #e6e6ff;
+    white-space: nowrap;
+    text-align: right;
+    padding: 0 1em;
+    line-height: 1.5em;
+    border-top: 2px solid white !important;
+}
 .pgnb_group {
     text-align: left;
     border-left:2px solid white !important;
     border-top:2px solid white !important;
     width: 100%;
-    padding: 0px;
+    padding: 1px !important;
 }
 .pgnb_group div {
     display: block;
@@ -58,4 +74,7 @@
 }
 .pgnb_table tr:nth-child(odd) {
     background-color: #f7f7f7;
+}
+.pgnb_list li a {
+    white-space: nowrap;
 }

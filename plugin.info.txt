@@ -1,7 +1,8 @@
-base   navbox
-author Jovin Sveinbjornsson
-email  hello@midgardapps.com
-date   2018-04-08
-name   NavBox Plugin
-desc   This produces a Wikipedia style NavBox at the bottom of the page for related articles.
-url    https://www.dokuwiki.org/plugin:navbox
+base    navbox
+author  Jovin Sveinbjornsson
+email   hello@midgardapps.com
+date    2018-04-08
+name    NavBox Plugin
+version 2.0.0
+desc    This produces a Wikipedia style NavBox at the bottom of the page for related articles.
+url     https://www.dokuwiki.org/plugin:navbox

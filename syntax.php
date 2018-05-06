@@ -12,8 +12,6 @@
  * @license GPL 2 https://www.gnu.org/licenses/gpl-2.0.html
  * @author Jovin Sveinbjornsson
  * @author Midgard Apps <hello@midgardapps.com>
- *
- * @version 1.3
  */
 
 // Must be run within DokuWiki
@@ -39,7 +37,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
      * When should this be executed?
      */
     public function getSort() {
-        return 35;
+        return 205;
     }
     
     public function getAllowedTypes() {
@@ -72,8 +70,14 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         $lines = explode("\n", $match);
         // We'll store all our variables in here for processing later
         $navbox = array();
-        // Temporary area to store groups
+        // Switches
+        $groupType = 0; // 0 = none, 1 = group, 2 = subgroup
+        $autoSub = false;
+        // Temporary Variables
+        $currentGroup = array();
         $current = '';
+        $currentSub = '';
+        
         
         // Loop over while we continue to have more to process
         while(count($lines) > 0) {
@@ -82,50 +86,128 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
             // If it's not valid, skip
             if (strlen($line) < 1) continue;
             
-            // Check if this is the title
-            if (strpos($line, 'nb-title') !== false) {
-                // Store it
-                $navbox['nb-title'] = substr($line, 9);
-            } else if (strpos($line, 'nbg-title') !== false) { // Check for the group title
-                // Store it
-                $current = substr($line, 10);
-            } else if (strpos($line, 'nbg-items') !== false && strlen($current) > 0) { // Check that we have a valid group, and get the items
-                // Store our list of links to be parsed
-                $navbox[$current] = substr($line, 10);
-                // Reset our holder
-                $current = '';
-            } else if (strpos($line, 'nbg-namespace') !== false) { // This is an automated namespace listing
-                // Placeholders
-                $links = '';
-                $name = '';
-                // The current namespace has been requested
-                if (strpos($line, '[[self') !== false) {
-                    // Split out the 'sub namespaces'
-                    $name = explode(':', pageinfo()['namespace']);
-                    // Grab the lowest level namespace
-                    $name = array_pop($name);
-                    // Identify the working directory for this namespace
-                    $dir = './data/pages/'.str_replace(':', '/', pageinfo()['namespace']);
-                    // Look in the directory and get all .txt files (doku pages)
-                    foreach (glob($dir.'/*.txt') as $filename) {
-                        // Store each file as a new markup link
-                        $links .= '[['.str_replace('/', ':', substr($filename, 13, -4)).']]';
-                    }
-                    
-                    // Identify whether the title is overridden by searching for the additional | parameter
-                    $start = strpos($line, '[[self|');
-                    // If this value is valid (ie, a number), determine the overridden value
-                    if ($start !== false) {
-                        // We have a specific title to show, extract only this
-                        $start += 7;
-                        $name = substr($line, $start, strpos($line, ']]') - $start);
-                    }
+            // This if/else cascade proceeds in Specific -> Less Specific for syntax
+            if (strpos($line, '### !') !== false) {
+                // Subgroup with Advanced Syntax
+                // Turn on the 'subgroup' flag
+                $autoSub = true;
+            } else if (strpos($line, '### ') !== false) {
+                // Subgroup
+                // Name our Subgroup
+                $currentSub = substr($line, 4);
+                // Set the group type so we an add links appropriately
+                $groupType = 2;
+                // No further processing required
+                continue;
+            } else if (strpos($line, '## ') !== false) {
+                // Group
+                // Check if we already have a group, if so, do this
+                if (!empty($currentGroup)) {
+                    // Store the current group
+                    $navbox[$current] = $currentGroup;
+                    // Start a new group
+                    $currentGroup = array();
+                    // Clear the Subgroup name too
+                    $currentSub = '';
                 }
-                
-                // Store the title & links contained
-                $navbox[$name] = $links;
+                // Name our new group
+                $current = substr($line, 3);
+                // Set the group type so we can add links appropriately
+                $groupType = 1;
+                // No further processing required
+                continue;
+            } else if (strpos($line, '# ') !== false) {
+                // Title
+                // Store the title
+                $navbox['title'] = substr($line, 2);
+                // No further processing required
+                continue;
+            } else if (substr($line, 0, 2) == '[[') {
+                // We have a list of links
+                // These are the valid separators for the links, also no separators are valid too
+                $separators = [',', ';'];
+                // If we are dealign with a Group
+                if ($groupType == 1) {
+                    // Store the links in the 'default' section
+                    $currentGroup['default'] = str_replace($separators, '', $line);
+                } else if ($groupType == 2) {
+                    // We are dealing with a Subgroup instead
+                    // Store the links in the current Subgroup
+                    $currentGroup[$currentSub] = str_replace($separators, '', $line);
+                }
+            } else {
+                // This is a automated flag, unset all switches
+                $autoSub = false;
+                $groupType = 0;
+            }            
+        
+            // The below will identify what kind of automated generation is required
+            if (strpos($line, '!ns') !== false) {
+                // A Namespace listing
+                // Offset if auto space is used
+                $offset = 0;
+                if ($autoSub) {
+                    $offset = 4;
+                }
+                // Get the current namespace
+                $namespace = pageinfo()['namespace'];
+                // If the +n parameter is used, change the namspace
+                if (strpos($line, '+n') !== false) {
+                    // Custom Namespace
+                    $namespace = substr($line, 8 + $offset, -2);
+                }
+                // Get the lowest level namespace, this is our automatic title
+                $title = array_pop(explode(':', $namespace));
+                // If the +t parameter is used, change the title
+                if (strpos($line, '+t') !== false) {
+                    // Custom Title
+                    $title = substr($line, 6 + $offset);
+                }
+                // If the +nt parameter is used, change the namespace and title
+                if (strpos($line, '+nt') !== false) {
+                    // Find where the namespace begins
+                    $nsStart = strpos($line, '[[') + 2;
+                    // Find where the title begins
+                    $tStart = strpos($line, '|') + 1;
+                    // Extract the title
+                    $title = substr($line, $tStart, -2);
+                    // Extract the namespace
+                    $namespace = substr($line, $nsStart, ($tStart - $nsStart - 1));
+                }
+                // String for the working directory of the namespace
+                $dir = './data/pages/'.str_replace(':', '/', $namespace);
+                // Instantiate our Links variable
+                $links = '';
+                // Look in the directory and get all .txt files (doku pages)
+                foreach (glob($dir.'/*.txt') as $filename) {
+                    // Store each file as a new markup link
+                    $links .= '[['.str_replace('/', ':', substr($filename, 13, -4)).']]';
+                }
+                // Identify if this should be a subgroup
+                if ($autoSub) {
+                    // Append to the parent group
+                    $currentGroup[$title] = $links;
+                } else {
+                    // Add as a main level group
+                    $navbox[$title]['default'] = $links;
+                }
+            } else if (strpos($line, '!tree') !== false) {
+                // The hierarchy of this page
+            } else if (strpos($line, '!tag') !== false) {
+                // Tag listing, need to use the pagelist plugin for this one
+                // This is a stretch goal, well and truly
+            }
+            
+            // We are working on the last line group, store our groups
+            if (count($lines) == 1) {
+                if (!empty($currentGroup)) {
+                    $navbox[$current] = $currentGroup;
+                }
             }
         }
+        //echo '<pre>';
+        //var_dump($navbox);
+        //echo '</pre>';
         
         return $navbox;
     }
@@ -151,7 +233,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         $url = '';
 
         // Add in the title, parse it first to generate any URLs present
-        $html .= $this->urlRender($data['nb-title']);
+        $html .= $this->urlRender($data['title']);
         // Prepare for the groups
         $html .= '</span></th></tr>';
         
@@ -164,18 +246,45 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         // Go through each item group and build their row
         foreach ($data as $group => $items) {
             // Placeholder for group HTML while we build it,  Add in the group title, and prepare for the items
-            $ghtml = '<tr><th class="pgnb_group_title">'.$this->urlRender($group).'</th><td class="pgnb_group"><div style="padding:0em 0.25em;"><ul class="pgnb_list">';
+            $ghtml = '<tr><th class="pgnb_group_title">'.$this->urlRender($group).'</th><td class="pgnb_group"><div style="padding:0.25em;"><ul class="pgnb_list">';
+            
+            // Flag for formatting the child table
+            $subgroupPresent = false;
+            
+            // Iterate over each subgroup, there will always be a 'default'
+            foreach ($items as $subgroup => $subitems) {
+                // Render all the links
+                $urls = $this->urlRender($subitems);
+                // Format into the list
+                $urls = str_replace("<a", "<li><a", $urls);
+                $urls = str_replace("</a>", "</a></li>", $urls);
 
-            // Render all the links
-            $urls = $this->urlRender($items);
-            // Format into the list
-            $urls = str_replace("<a", "<li><a", $urls);
-            $urls = str_replace("</a>", "</a></li>", $urls);
-            // Append the list of URLs
-            $ghtml .= $urls;
-        
+                // The base group
+                if ($subgroup == 'default') {
+                    // Append the list of URLs
+                    $ghtml .= $urls.'</ul></div>';
+                } else {
+                    // We are working with a subgroup, additional HTML tags required
+                    // If we don't already have a child table for the subgroups, create one
+                    if (!$subgroupPresent) {
+                        // This is our first subgroup
+                        $ghtml .= '<table class="pgnb_child_table">';
+                        // Turn on the switch
+                        $subgroupPresent = true;
+                    }
+                    // Append the row for the subgroup
+                    $ghtml .= '<tr><th class="pgnb_subgroup_title">'.$this->urlRender($subgroup).'</th><td class="pgnb_group"><div style=padding:0.25em;"<ul class="pgnb_list">'.$urls."</ul></div></td></tr>";
+                }
+            }
+            
+            // We had subgroups, close off the child table
+            if ($subgroupPresent) {
+                $ghtml .= '</table>';
+            }
+            
             // Close the group
-            $ghtml .= '</ul></div></td></tr>';
+            $ghtml .= '</td></tr>';
+            
             // Append the group to our HTML
             $html .= $ghtml;
             // Reset our placeholder
