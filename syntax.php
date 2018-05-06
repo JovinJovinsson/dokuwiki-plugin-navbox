@@ -246,7 +246,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         // Go through each item group and build their row
         foreach ($data as $group => $items) {
             // Placeholder for group HTML while we build it,  Add in the group title, and prepare for the items
-            $ghtml = '<tr><th class="pgnb_group_title">'.$this->urlRender($group).'</th><td class="pgnb_group"><div style="padding:0.25em;"><ul class="pgnb_list">';
+            $ghtml = '<tr><th class="pgnb_group_title">'.$this->urlRender($group).'</th><td class="pgnb_group">';
             
             // Flag for formatting the child table
             $subgroupPresent = false;
@@ -262,7 +262,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
                 // The base group
                 if ($subgroup == 'default') {
                     // Append the list of URLs
-                    $ghtml .= $urls.'</ul></div>';
+                    $ghtml .= '<div style="padding:0.25em;"><ul class="pgnb_list">'.$urls.'</ul></div>';
                 } else {
                     // We are working with a subgroup, additional HTML tags required
                     // If we don't already have a child table for the subgroups, create one
