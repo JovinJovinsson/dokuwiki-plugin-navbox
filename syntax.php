@@ -139,6 +139,13 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
                 // This is a automated flag, unset all switches
                 $autoSub = false;
                 $groupType = 0;
+                
+                // We need to store the current group (if we have one) as it was not a SubGroup for the Automated tag
+                if (!empty($currentGroup)) {
+                    $navbox[$current] = $currentGroup;
+                    $currentGroup = array();
+                    $currentSub = '';
+                }
             }            
         
             // The below will identify what kind of automated generation is required
@@ -233,7 +240,11 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         $url = '';
 
         // Add in the title, parse it first to generate any URLs present
-        $html .= $this->urlRender($data['title']);
+        if (strpos($data['title'], '[[' !== false) {
+            $html .= $this->urlRender($data['title']);
+        } else {
+            $html .= $data['title'];
+        }
         // Prepare for the groups
         $html .= '</span></th></tr>';
         
