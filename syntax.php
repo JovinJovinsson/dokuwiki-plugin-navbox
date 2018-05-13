@@ -240,7 +240,7 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         $url = '';
 
         // Add in the title, parse it first to generate any URLs present
-        if (strpos($data['title'], '[[' !== false) {
+        if (strpos($data['title'], '[[') !== false) {
             $html .= $this->urlRender($data['title']);
         } else {
             $html .= $data['title'];
