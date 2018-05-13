@@ -257,7 +257,15 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
         // Go through each item group and build their row
         foreach ($data as $group => $items) {
             // Placeholder for group HTML while we build it,  Add in the group title, and prepare for the items
-            $ghtml = '<tr><th class="pgnb_group_title">'.$this->urlRender($group).'</th><td class="pgnb_group">';
+            $ghtml = '<tr><th class="pgnb_group_title">';
+            
+            if (strpos($group, '[[') !== false) {
+                $ghtml .= $this->urlRender($group);
+            } else {
+                $ghtml .= $group;
+            }
+            
+            $ghtml .= '</th><td class="pgnb_group">';
             
             // Flag for formatting the child table
             $subgroupPresent = false;
@@ -284,7 +292,15 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
                         $subgroupPresent = true;
                     }
                     // Append the row for the subgroup
-                    $ghtml .= '<tr><th class="pgnb_subgroup_title">'.$this->urlRender($subgroup).'</th><td class="pgnb_group"><div style=padding:0.25em;"<ul class="pgnb_list">'.$urls."</ul></div></td></tr>";
+                    $ghtml .= '<tr><th class="pgnb_subgroup_title">';
+                    
+                    if (strpos($subgroup, '[[') !== false) {
+                        $ghtml .= $this->urlRender($subgroup);
+                    } else {
+                        $ghtml .= $subgroup;
+                    }
+                    
+                    $ghtml .= '</th><td class="pgnb_group"><div style=padding:0.25em;"<ul class="pgnb_list">'.$urls."</ul></div></td></tr>";
                 }
             }
             
