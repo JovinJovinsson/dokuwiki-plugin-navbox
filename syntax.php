@@ -8,8 +8,11 @@
  *
  * Wikipedia Example: https://en.wikipedia.org/wiki/Singapore
  * Scroll to the bottom to see "Singapore Articles" section
+ * 
+ * Midgard Apps OpenWiki Example
+ * https://openwiki.midgardapps.com/
  *
- * @license GPL 2 https://www.gnu.org/licenses/gpl-2.0.html
+ * @license The Unlicense http://unlicense.org/
  * @author Jovin Sveinbjornsson
  * @author Midgard Apps <hello@midgardapps.com>
  */
