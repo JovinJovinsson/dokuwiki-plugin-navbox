@@ -17,6 +17,8 @@
  * @author Midgard Apps <hello@midgardapps.com>
  */
 
+use dokuwiki\Parsing\Parser;
+
 // Must be run within DokuWiki
 if (!defined('DOKU_INC')) die();
 
@@ -338,20 +340,17 @@ class syntax_plugin_navbox extends DokuWiki_Syntax_Plugin {
      */
     private function urlRender($item) {
         // Create the parser
-        $urlParser = new Doku_Parser();
-        // Add a handler
-        $urlParser->Handler = new Doku_Handler();
+        $urlParser = new Parser(new Doku_Handler());
+
         // Add all the parsing modes for various URLs
-        $urlParser->addMode('camelcaselink',new Doku_Parser_Mode_CamelCaseLink());
-        $urlParser->addMode('internallink',new Doku_Parser_Mode_InternalLink());
-        $urlParser->addMode('media',new Doku_Parser_Mode_Media());
-        $urlParser->addMode('externallink',new Doku_Parser_Mode_ExternalLink());
-        $urlParser->addMode('emaillink',new Doku_Parser_Mode_EmailLink());
-        $urlParser->addMode('windowssharelink',new Doku_Parser_Mode_WindowsShareLink());
-        $urlParser->addMode('filelink',new Doku_Parser_Mode_FileLink());
-        $urlParser->addMode('eol',new Doku_Parser_Mode_Eol());
+        $modes = p_get_parsermodes();
+        foreach($modes as $mode){
+            $urlParser->addMode($mode['mode'],$mode['obj']);
+        }
+
         // Parse the string into instructions
         $instructions = $urlParser->parse($item);
+
         // Create the renderer
         $urlRenderer = new Doku_Renderer_XHTML();
         // Iterate over each instruction
