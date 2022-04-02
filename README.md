@@ -1,4 +1,4 @@
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/midgardtech)
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://PayPal.Me/jovinjovinsson)
 
 
 # NavBox, a plugin for DokuWiki
